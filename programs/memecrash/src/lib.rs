@@ -23,6 +23,7 @@ mod memecrash {
         round.status = RoundStatus::Pending;
         round.ruleset_version = ruleset_version;
         round.token_mint = ctx.accounts.bet_mint.key();
+        round.current_multiplier_bps = Self::MIN_BASE_MULTIPLIER_BPS;
         round.bump = *ctx.bumps.get("round").unwrap();
         Ok(())
     }
@@ -49,6 +50,8 @@ mod memecrash {
         bet.user = ctx.accounts.user.key();
         bet.amount = amount;
         bet.cashed_out = false;
+        bet.payout = 0;
+        bet.cash_out_multiplier_bps = 0;
         bet.bump = *ctx.bumps.get("bet").unwrap();
 
         emit!(BetPlaced {
@@ -60,13 +63,52 @@ mod memecrash {
         Ok(())
     }
 
+    pub fn update_round_state(
+        ctx: Context<UpdateRoundState>,
+        status: RoundStatus,
+        current_multiplier_bps: u64,
+    ) -> Result<()> {
+        require_keys_eq!(ctx.accounts.state.admin, ctx.accounts.admin.key(), MemecrashError::Unauthorized);
+        require!(
+            current_multiplier_bps >= Self::MIN_BASE_MULTIPLIER_BPS,
+            MemecrashError::InvalidMultiplier
+        );
+        require!(
+            current_multiplier_bps >= ctx.accounts.round.current_multiplier_bps,
+            MemecrashError::MultiplierRegression
+        );
+
+        ctx.accounts.round.status = status;
+        ctx.accounts.round.current_multiplier_bps = current_multiplier_bps;
+
+        Ok(())
+    }
+
     pub fn cash_out(ctx: Context<CashOut>, multiplier_bps: u64) -> Result<()> {
-        require!(ctx.accounts.round.status == RoundStatus::Running, MemecrashError::RoundNotRunning);
+        require!(
+            ctx.accounts.round.status == RoundStatus::Running
+                || ctx.accounts.round.status == RoundStatus::Crashed,
+            MemecrashError::RoundNotRunning
+        );
         require!(!ctx.accounts.bet.cashed_out, MemecrashError::AlreadyCashedOut);
+        require!(
+            multiplier_bps >= Self::MIN_BASE_MULTIPLIER_BPS,
+            MemecrashError::InvalidMultiplier
+        );
+        require!(
+            multiplier_bps <= ctx.accounts.round.current_multiplier_bps,
+            MemecrashError::MultiplierTooHigh
+        );
         let fee = ctx.accounts.state.fee_bps as u128;
         let payout = ctx.accounts.bet.amount as u128 * multiplier_bps as u128 / 10_000u128;
         let fee_amount = payout * fee / 10_000u128;
         let player_amount = payout - fee_amount;
+        require!(player_amount <= u64::MAX as u128, MemecrashError::InvalidMultiplier);
+        require!(fee_amount <= u64::MAX as u128, MemecrashError::InvalidMultiplier);
+        require!(
+            player_amount + fee_amount <= ctx.accounts.round_vault.amount as u128,
+            MemecrashError::InsufficientVaultBalance
+        );
 
         let seeds = &[b"round", &ctx.accounts.round.round_no.to_le_bytes(), &[ctx.accounts.round.bump]];
         let signer = &[&seeds[..]];
@@ -99,6 +141,7 @@ mod memecrash {
 
         ctx.accounts.bet.cashed_out = true;
         ctx.accounts.bet.payout = player_amount as u64;
+        ctx.accounts.bet.cash_out_multiplier_bps = multiplier_bps;
 
         emit!(CashOutEvent {
             round: ctx.accounts.round.key(),
@@ -108,6 +151,10 @@ mod memecrash {
 
         Ok(())
     }
+}
+
+impl memecrash {
+    const MIN_BASE_MULTIPLIER_BPS: u64 = 10_000;
 }
 
 #[derive(Accounts)]
@@ -152,6 +199,15 @@ pub struct CreateRound<'info> {
     pub token_program: Program<'info, Token>;
     pub system_program: Program<'info, System>;
     pub rent: Sysvar<'info, Rent>;
+}
+
+#[derive(Accounts)]
+pub struct UpdateRoundState<'info> {
+    #[account(mut, has_one = admin @ MemecrashError::Unauthorized)]
+    pub state: Account<'info, State>;
+    pub admin: Signer<'info>;
+    #[account(mut, seeds = [b"round", &round.round_no.to_le_bytes()], bump = round.bump)]
+    pub round: Account<'info, Round>;
 }
 
 #[derive(Accounts)]
@@ -215,11 +271,12 @@ pub struct Round {
     pub token_mint: Pubkey;
     pub status: RoundStatus;
     pub ruleset_version: u8;
+    pub current_multiplier_bps: u64;
     pub bump: u8;
 }
 
 impl Round {
-    pub const INIT_SPACE: usize = 8 + 32 + 1 + 1;
+    pub const INIT_SPACE: usize = 8 + 32 + 1 + 1 + 8;
 }
 
 #[account]
@@ -229,11 +286,12 @@ pub struct Bet {
     pub amount: u64;
     pub cashed_out: bool;
     pub payout: u64;
+    pub cash_out_multiplier_bps: u64;
     pub bump: u8;
 }
 
 impl Bet {
-    pub const INIT_SPACE: usize = 32 + 32 + 8 + 1 + 8 + 1;
+    pub const INIT_SPACE: usize = 32 + 32 + 8 + 1 + 8 + 8 + 1;
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
@@ -277,8 +335,16 @@ pub enum MemecrashError {
     InvalidAmount,
     #[msg("Round not running")] 
     RoundNotRunning,
-    #[msg("Bet already cashed out")] 
+    #[msg("Bet already cashed out")]
     AlreadyCashedOut,
-    #[msg("Unauthorized")] 
+    #[msg("Unauthorized")]
     Unauthorized,
+    #[msg("Invalid multiplier")]
+    InvalidMultiplier,
+    #[msg("Multiplier exceeds allowed round progression")]
+    MultiplierTooHigh,
+    #[msg("Multiplier cannot decrease")]
+    MultiplierRegression,
+    #[msg("Vault does not have enough balance for payout")]
+    InsufficientVaultBalance,
 }
