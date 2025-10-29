@@ -30,12 +30,15 @@ prisma/       # Shared Prisma schema & migrations
 2. **Copy environment template**
 
    ```bash
-   cp .env.example .env
+   cp .env.example .env.development
    ```
 
-   Populate the values with your RPC endpoints, Supabase credentials, and
-   Switchboard VRF keypair. For local development you can use the provided
-   mock secrets.
+   Update `.env.development` with the devnet RPC endpoint, local Postgres
+   credentials, and a PLAY mint you control. When preparing for production,
+   create a separate `.env.production` (or configure secrets in your hosting
+   provider) using `.env.example` as the reference. The `.env.development` and
+   `.env.production` files are gitignored—keep the real values in your local
+   workspace or deployment platform rather than committing secrets.
 
 3. **Start the stack**
 
@@ -80,7 +83,7 @@ pnpm test
 
 ## Deployment Notes
 
-- Update `.env` with production RPCs, Supabase, Redis, and Switchboard
+- Update `.env.production` with mainnet RPCs, Supabase, Redis, and Switchboard
   credentials.
 - Deploy the Anchor program via `anchor deploy` and record the program ID in the
   API `config.ts` and SDK constants.
