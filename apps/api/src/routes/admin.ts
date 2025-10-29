@@ -1,10 +1,10 @@
 import { FastifyInstance } from 'fastify';
-import { config } from '../config';
+import { config } from '@memecrash/sdk/config';
 
 const authGuard = (app: FastifyInstance) => {
   return async (request: any) => {
     const header = request.headers['authorization'];
-    if (!header || header !== `Bearer ${config.adminBearerToken}`) {
+    if (!header || header !== `Bearer ${config.admin.bearerToken}`) {
       throw app.httpErrors.unauthorized('Invalid admin credentials');
     }
   };

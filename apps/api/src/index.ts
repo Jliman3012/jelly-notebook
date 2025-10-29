@@ -2,7 +2,7 @@ import Fastify from 'fastify';
 import websocket from '@fastify/websocket';
 import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
-import { config } from './config';
+import { config } from '@memecrash/sdk/config';
 import { registerRoutes } from './routes';
 import { registerWs } from './ws';
 import { registerPlugins } from './plugins';
@@ -19,8 +19,8 @@ async function main() {
   await registerWs(app);
 
   try {
-    await app.listen({ port: config.port, host: '0.0.0.0' });
-    app.log.info(`API listening on port ${config.port}`);
+    await app.listen({ port: config.server.port, host: '0.0.0.0' });
+    app.log.info(`API listening on port ${config.server.port}`);
   } catch (error) {
     app.log.error(error);
     process.exit(1);

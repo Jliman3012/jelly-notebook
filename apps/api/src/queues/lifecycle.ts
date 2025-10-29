@@ -1,7 +1,7 @@
 import { Queue, Worker } from 'bullmq';
-import { config } from '../config';
+import { config } from '@memecrash/sdk/config';
 
-const connection = { connection: { url: config.redisUrl } };
+const connection = { connection: { url: config.redis.url } };
 
 export const lifecycleQueue = new Queue('round-lifecycle', connection);
 

@@ -2,7 +2,7 @@ import { registerLifecycleWorker } from '../queues/lifecycle';
 import fastifyPlugin from 'fastify-plugin';
 import { PrismaClient } from '@prisma/client';
 import { createClient } from 'redis';
-import { config } from '../config';
+import { config } from '@memecrash/sdk/config';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -13,7 +13,7 @@ declare module 'fastify' {
 
 export const registerPlugins = fastifyPlugin(async (fastify) => {
   const prisma = new PrismaClient();
-  const redis = createClient({ url: config.redisUrl });
+  const redis = createClient({ url: config.redis.url });
   redis.on('error', (error) => fastify.log.error({ error }, 'Redis error'));
   await redis.connect();
 
