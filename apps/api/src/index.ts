@@ -1,3 +1,4 @@
+import { loadEnvironment } from '@memecrash/sdk/config';
 import Fastify from 'fastify';
 import websocket from '@fastify/websocket';
 import helmet from '@fastify/helmet';
@@ -6,6 +7,8 @@ import { config } from './config';
 import { registerRoutes } from './routes';
 import { registerWs } from './ws';
 import { registerPlugins } from './plugins';
+
+loadEnvironment();
 
 async function main() {
   const app = Fastify({ logger: true });

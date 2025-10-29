@@ -1,6 +1,8 @@
 node_modules
 .DS_Store
 .env
+.env.development
+.env.production
 .pnpm-store
 apps/web/.next
 apps/web/out
