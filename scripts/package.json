@@ -1,0 +1,14 @@
+{
+  "name": "@memecrash/scripts",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev-seed": "tsx dev-seed.ts",
+    "start-round": "tsx start-round.ts"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.9.1",
+    "dotenv": "^16.3.2",
+    "tsx": "^4.6.2"
+  }
+}
