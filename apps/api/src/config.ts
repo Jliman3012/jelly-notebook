@@ -12,6 +12,8 @@ const schema = z.object({
   SUPABASE_SERVICE_ROLE_KEY: z.string().default('service-role-key'),
   GEO_BLOCK_LIST: z.string().optional(),
   ADMIN_BEARER_TOKEN: z.string().default('dev-admin'),
+  BIRDEYE_API_KEY: z.string().optional(),
+  BITQUERY_API_KEY: z.string().optional(),
 });
 
 const parsed = schema.parse(process.env);
@@ -29,4 +31,10 @@ export const config = {
   },
   geoBlockList: parsed.GEO_BLOCK_LIST?.split(',').map((code) => code.trim()).filter(Boolean) ?? [],
   adminBearerToken: parsed.ADMIN_BEARER_TOKEN,
+  birdeye: {
+    apiKey: parsed.BIRDEYE_API_KEY,
+  },
+  bitquery: {
+    apiKey: parsed.BITQUERY_API_KEY,
+  },
 };

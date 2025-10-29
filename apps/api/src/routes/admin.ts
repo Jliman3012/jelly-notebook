@@ -1,11 +1,12 @@
 import { FastifyInstance } from 'fastify';
 import { config } from '../config';
+import { throwHttpError } from '../utils/httpErrors';
 
 const authGuard = (app: FastifyInstance) => {
   return async (request: any) => {
     const header = request.headers['authorization'];
     if (!header || header !== `Bearer ${config.adminBearerToken}`) {
-      throw app.httpErrors.unauthorized('Invalid admin credentials');
+      throwHttpError(app, 'unauthorized', 'Invalid admin credentials');
     }
   };
 };
@@ -20,7 +21,7 @@ export const adminRoutes = async (app: FastifyInstance) => {
   app.post('/rounds/new', async () => {
     const roundNo = Math.floor(Date.now() / 1000);
     const token = await app.prisma.token.findFirst({ where: { allowlisted: true }, orderBy: { liquidityUSD: 'desc' } });
-    if (!token) throw app.httpErrors.badRequest('No allowlisted tokens available');
+    if (!token) throwHttpError(app, 'badRequest', 'No allowlisted tokens available');
     const round = await app.prisma.round.create({
       data: {
         roundNo,

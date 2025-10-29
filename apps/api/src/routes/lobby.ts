@@ -1,5 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
+import { throwHttpError } from '../utils/httpErrors';
 
 const tokensQuerySchema = z.object({ allowlisted: z.string().optional() });
 
@@ -18,7 +19,7 @@ export const lobbyRoutes = async (app: FastifyInstance) => {
       orderBy: { createdAt: 'desc' },
       include: { token: true },
     });
-    if (!round) throw app.httpErrors.notFound('No active round');
+    if (!round) throwHttpError(app, 'notFound', 'No active round');
     return {
       id: round.id,
       roundNo: round.roundNo,
@@ -36,7 +37,7 @@ export const lobbyRoutes = async (app: FastifyInstance) => {
   app.get('/rounds/:id', async (request) => {
     const params = request.params as { id: string };
     const round = await app.prisma.round.findUnique({ where: { id: params.id }, include: { token: true } });
-    if (!round) throw app.httpErrors.notFound('Round not found');
+    if (!round) throwHttpError(app, 'notFound', 'Round not found');
     return round;
   });
 
@@ -44,7 +45,7 @@ export const lobbyRoutes = async (app: FastifyInstance) => {
     const params = request.params as { roundNo: string };
     const roundNo = Number(params.roundNo);
     const round = await app.prisma.round.findFirst({ where: { roundNo } });
-    if (!round) throw app.httpErrors.notFound('Round not found');
+    if (!round) throwHttpError(app, 'notFound', 'Round not found');
     return {
       roundNo: round.roundNo,
       vrfResult: round.vrfResult,

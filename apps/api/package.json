@@ -12,9 +12,8 @@
   "dependencies": {
     "@bull-board/api": "^5.12.0",
     "@bull-board/fastify": "^5.12.0",
-    "@bullmq/fastify": "^1.1.0",
     "@fastify/helmet": "^11.1.1",
-    "@fastify/jwt": "^8.3.0",
+    "@fastify/jwt": "^10.0.0",
     "@fastify/rate-limit": "^8.0.0",
     "@fastify/static": "^6.11.1",
     "@prisma/client": "^5.9.1",
@@ -29,7 +28,8 @@
     "nanoid": "^5.0.4",
     "zod": "^3.22.4",
     "@fastify/websocket": "^8.3.1",
-    "tweetnacl": "^1.0.3"
+    "tweetnacl": "^1.0.3",
+    "ws": "^8.16.0"
   },
   "devDependencies": {
     "@types/node": "^20.11.19",
@@ -40,7 +40,6 @@
     "tsup": "^7.2.0",
     "tsx": "^4.6.2",
     "typescript": "^5.3.3",
-    "vitest": "^1.2.2",
-    "@types/tweetnacl": "^1.0.3"
+    "vitest": "^1.2.2"
   }
 }

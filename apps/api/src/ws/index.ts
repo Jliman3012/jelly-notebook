@@ -1,4 +1,5 @@
 import { FastifyInstance } from 'fastify';
+import type WebSocket from 'ws';
 
 interface TickPayload {
   ms: number;
@@ -8,6 +9,8 @@ interface TickPayload {
 }
 
 export const registerWs = async (app: FastifyInstance) => {
+  const memecoinClients = new Set<WebSocket>();
+
   app.get('/lobby', { websocket: true }, (connection) => {
     const interval = setInterval(() => {
       connection.socket.send(JSON.stringify({ type: 'countdown', ms: 5000 }));
@@ -37,5 +40,24 @@ export const registerWs = async (app: FastifyInstance) => {
       connection.socket.send(JSON.stringify({ type: 'tick', tick }));
     }, 1000);
     connection.socket.on('close', () => clearInterval(interval));
+  });
+
+  app.get('/memecoins', { websocket: true }, (connection) => {
+    const { socket } = connection;
+    memecoinClients.add(socket);
+
+    const unsubscribe = app.memecoins.onNewListing((token) => {
+      if (socket.readyState === socket.OPEN) {
+        socket.send(JSON.stringify({ type: 'newListing', token }));
+      }
+    });
+
+    const cleanup = () => {
+      memecoinClients.delete(socket);
+      unsubscribe();
+    };
+
+    socket.on('close', cleanup);
+    socket.on('error', cleanup);
   });
 };
