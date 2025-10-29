@@ -1,0 +1,24 @@
+{
+  "name": "@memecrash/sdk",
+  "version": "0.1.0",
+  "private": false,
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsup src/index.ts --format esm,cjs --dts",
+    "dev": "tsup src/index.ts --format esm --dts --watch",
+    "lint": "eslint 'src/**/*.{ts,tsx}'",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "@coral-xyz/anchor": "^0.30.1",
+    "@solana/web3.js": "^1.93.3"
+  },
+  "devDependencies": {
+    "tsup": "^7.2.0",
+    "typescript": "^5.3.3",
+    "vitest": "^1.2.2"
+  }
+}

@@ -1,0 +1,69 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum RoundStatus {
+  PENDING
+  LOCKED
+  RUNNING
+  CRASHED
+  SETTLED
+  CANCELED
+}
+
+model Token {
+  id           String   @id @default(cuid())
+  mint         String   @unique
+  symbol       String?
+  name         String?
+  logoUrl      String?
+  liquidityUSD Float
+  fdvUSD       Float?
+  tags         String[]
+  allowlisted  Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  rounds       Round[]
+}
+
+model Round {
+  id             String      @id @default(cuid())
+  roundNo        Int         @unique
+  tokenMint      String
+  status         RoundStatus
+  vrfRequest     String?
+  vrfResult      String?
+  commitHash     String?
+  startAt        DateTime?
+  lockAt         DateTime?
+  endAt          DateTime?
+  rulesetVersion String
+  pathCdnUrl     String?
+  basePrice      Float?
+  crashAtMs      Int?
+  maxMultiplier  Float?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  token          Token       @relation(fields: [tokenMint], references: [mint])
+  bets           Bet[]
+}
+
+model Bet {
+  id              String   @id @default(cuid())
+  roundId         String
+  userId          String?
+  wallet          String
+  stakeLamports   BigInt
+  cashedOut       Boolean  @default(false)
+  cashOutMs       Int?
+  payoutLamports  BigInt?
+  txPlace         String?
+  txCashOut       String?
+  createdAt       DateTime @default(now())
+  round           Round   @relation(fields: [roundId], references: [id])
+}
